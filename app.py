@@ -42,8 +42,8 @@ if st.button("Generar Problemas e Instrucciones") and tema:
                         "content": (
                             f"Dado el tema '{tema}', realiza lo siguiente:\n"
                             f"1. Propón 10 problemas que puedan ser resueltos mediante una aplicación de Streamlit.\n"
-                            f"2. Para cada problema, proporciona instrucciones detalladas para desarrollar una aplicación de Streamlit que lo resuelva."
-                            f" Presenta los resultados en un formato estructurado, donde cada problema esté numerado y seguido de sus instrucciones correspondientes."
+                            f"2. Para cada problema, proporciona instrucciones detalladas para desarrollar una aplicación de Streamlit que lo resuelva.\n"
+                            f"Presenta los resultados en un formato estructurado, donde cada problema esté numerado y seguido de sus instrucciones correspondientes."
                         )
                     }
                 ],
@@ -92,9 +92,9 @@ if st.button("Generar Problemas e Instrucciones") and tema:
                             st.markdown(f"### **{idx}. {descripcion}**")
                             st.markdown(f"**Instrucciones para la aplicación de Streamlit:**\n{instrucciones}")
 
-                            # Opcional: Botón para copiar las instrucciones
+                            # Botón para descargar las instrucciones
                             st.download_button(
-                                label=f"Copiar Instrucciones de la Aplicación {idx}",
+                                label=f"Descargar Instrucciones de la Aplicación {idx}",
                                 data=instrucciones,
                                 file_name=f"instrucciones_problema_{idx}.txt",
                                 mime="text/plain"
