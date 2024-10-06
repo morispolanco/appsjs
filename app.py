@@ -89,6 +89,6 @@ if topic:
                     st.subheader("Aplicación generada:")
                     st.components.v1.html(js_code, height=600, scrolling=True)
         else:
-            st.error("No se pudieron extraer los problemas.")
+            st.error("No se pudieron extraer los problemas.") 
     else:
         st.error("No se pudo generar la lista de problemas.")
