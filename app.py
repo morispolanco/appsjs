@@ -5,12 +5,13 @@ import re
 
 # Configuración de la página
 st.set_page_config(
-    page_title="Generador de Problemas e Instrucciones para Streamlit",  
+    page_title="Generador de Problemas e Instrucciones para Streamlit",
     page_icon="💡",
     layout="centered",
     initial_sidebar_state="auto",
 )
 
+# Título y descripción de la aplicación
 st.title("Generador de 10 Problemas e Instrucciones para Streamlit")
 st.write("Ingresa un tema y te proponemos 10 problemas junto con instrucciones para desarrollar aplicaciones de Streamlit que los resuelvan.")
 
