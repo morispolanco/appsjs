@@ -10,7 +10,7 @@ st.set_page_config(
     initial_sidebar_state="auto",
 )
 
-st.title("Generador de 10 Problemas para Aplicaciones de Streamlit")
+st.title("Generador de 10 Problemas para Aplicaciones de Streamlit") 
 st.write("Ingresa un tema y te proponemos 10 problemas que pueden ser resueltos mediante una aplicación de Streamlit.")
 
 # Campo de entrada para el tema
