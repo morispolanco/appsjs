@@ -51,24 +51,34 @@ def generar_problemas(tema):
     messages = [{"role": "user", "content": prompt}]
     problems = []
     response_placeholder = st.empty()
+    accumulated_text = ""
+
     with st.spinner("Generando problemas..."):
         for chunk in get_api_response(messages):
-            response_placeholder.markdown(response_placeholder.markdown + chunk)
+            accumulated_text += chunk
+            response_placeholder.markdown(accumulated_text)
+    
     # Procesar el texto recibido para extraer los problemas
-    lines = response_placeholder.markdown
-    for line in lines.split('\n'):
+    # Asumiendo que la API devuelve una lista numerada o con viñetas
+    lines = accumulated_text.split('\n')
+    for line in lines:
         line = line.strip()
-        if line:
-            # Eliminar numeración o viñetas
-            if line[0].isdigit() and line[1] == '.':
-                problem = line[2:].strip()
-            elif line.startswith('- '):
-                problem = line[2:].strip()
-            else:
-                problem = line
+        if not line:
+            continue
+        # Eliminar numeración o viñetas
+        if line[0].isdigit() and line[1] in {'.', ')'}:
+            problem = line[2:].strip()
+        elif line.startswith('- '):
+            problem = line[2:].strip()
+        else:
+            problem = line
+        if problem and problem not in problems:
             problems.append(problem)
-            if len(problems) == 10:
-                break
+        if len(problems) == 10:
+            break
+
+    if len(problems) < 10:
+        st.warning("No se pudieron generar 10 problemas. Intenta con otro tema.")
     return problems
 
 # Función para generar el código de la aplicación basado en el problema seleccionado
@@ -77,10 +87,12 @@ def generar_codigo(problema):
     messages = [{"role": "user", "content": prompt}]
     code = ""
     code_placeholder = st.empty()
+
     with st.spinner("Generando código de la aplicación..."):
         for chunk in get_api_response(messages):
             code += chunk
             code_placeholder.code(code, language='python')
+    
     return code
 
 # Configuración de la página
@@ -89,7 +101,7 @@ st.set_page_config(page_title="Generador de Apps Streamlit", layout="wide")
 st.title("Generador de Aplicaciones con Streamlit")
 st.write("Esta aplicación te ayudará a generar código para aplicaciones de Streamlit basadas en un tema que elijas.")
 
-# Paso 1: Ingresar el tema
+# Inicializar el estado de la sesión
 if 'step' not in st.session_state:
     st.session_state.step = 1
 if 'problems' not in st.session_state:
@@ -97,21 +109,23 @@ if 'problems' not in st.session_state:
 if 'codigo' not in st.session_state:
     st.session_state.codigo = ""
 
+# Paso 1: Ingresar el tema
 if st.session_state.step == 1:
     st.header("Paso 1: Ingresa un Tema")
     tema = st.text_input("Introduce el tema de tu interés:")
     if st.button("Generar Problemas") and tema:
-        st.session_state.problems = []
-        st.session_state.codigo = ""
-        st.session_state.step = 2
-        st.session_state.problems = generar_problemas(tema)
+        with st.spinner("Generando problemas..."):
+            st.session_state.problems = generar_problemas(tema)
+            if st.session_state.problems:
+                st.session_state.step = 2
 
 # Paso 2: Seleccionar un problema y generar el código
 if st.session_state.step == 2 and st.session_state.problems:
     st.header("Paso 2: Selecciona un Problema")
     problema = st.selectbox("Elige uno de los siguientes problemas para resolver:", st.session_state.problems)
     if st.button("Generar Código de la App"):
-        st.session_state.codigo = generar_codigo(problema)
+        with st.spinner("Generando código de la aplicación..."):
+            st.session_state.codigo = generar_codigo(problema)
 
 # Mostrar el código generado
 if st.session_state.codigo:
