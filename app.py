@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import json
+import re
 
 # Configuración de la página
 st.set_page_config(
@@ -10,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="auto",
 )
 
-st.title("Generador de 10 Problemas para Aplicaciones de Streamlit") 
+st.title("Generador de 10 Problemas para Aplicaciones de Streamlit")
 st.write("Ingresa un tema y te proponemos 10 problemas que pueden ser resueltos mediante una aplicación de Streamlit.")
 
 # Campo de entrada para el tema
@@ -32,13 +33,13 @@ if st.button("Generar Problemas") and tema:
                 "Content-Type": "application/json"
             }
 
-            # Crear el mensaje de entrada para la API
+            # Crear el mensaje de entrada para la API en español
             mensaje = {
                 "model": "mistralai/Mixtral-8x7B-Instruct-v0.1",
                 "messages": [
                     {
                         "role": "user",
-                        "content": f"Given the topic '{tema}', propose 10 problems that can be solved by a Streamlit app."
+                        "content": f"Dado el tema '{tema}', propón 10 problemas que puedan ser resueltos mediante una aplicación de Streamlit."
                     }
                 ],
                 "max_tokens": 2512,
@@ -47,7 +48,7 @@ if st.button("Generar Problemas") and tema:
                 "top_k": 50,
                 "repetition_penalty": 1,
                 "stop": ["<|eot_id|>"],
-                "stream": False  # Cambiado a False para simplificar la recopilación de respuestas
+                "stream": False  # Mantener en False para simplificar la recopilación de respuestas
             }
 
             # Realizar la solicitud POST a la API
@@ -61,14 +62,15 @@ if st.button("Generar Problemas") and tema:
                 
                 if contenido:
                     # Procesar el contenido para extraer los 10 problemas
-                    problemas = contenido.strip().split("\n")
-                    # Filtrar líneas que comienzan con un número o viñeta
-                    problemas_filtrados = [p for p in problemas if p.strip().startswith(("-", "1.", "2.", "3.", "4.", "5.", "6.", "7.", "8.", "9.", "10."))]
+                    # Suponiendo que los problemas están numerados del 1 al 10
+                    # Utilizamos expresiones regulares para encontrar los números y separar los problemas
+                    patrones = re.compile(r'^\s*\d+\.\s*(.+)', re.MULTILINE)
+                    problemas = patrones.findall(contenido)
                     
-                    if len(problemas_filtrados) >= 10:
+                    if len(problemas) >= 10:
                         st.success("Aquí tienes 10 problemas sugeridos:")
-                        for idx, problema in enumerate(problemas_filtrados[:10], 1):
-                            st.write(f"**{idx}.** {problema.lstrip('-').strip()}")
+                        for idx, problema in enumerate(problemas[:10], 1):
+                            st.write(f"**{idx}.** {problema.strip()}")
                     else:
                         st.warning("La API no retornó suficientes problemas. Intenta con otro tema.")
                 else:
