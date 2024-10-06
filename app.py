@@ -5,21 +5,21 @@ import re
 
 # Configuración de la página
 st.set_page_config(
-    page_title="Generador de Problemas y Aplicaciones con Streamlit",
+    page_title="Generador de Problemas e Instrucciones para Streamlit",
     page_icon="💡",
     layout="centered",
     initial_sidebar_state="auto",
 )
 
-st.title("Generador de 10 Problemas y Aplicaciones para Streamlit")
+st.title("Generador de 10 Problemas e Instrucciones para Streamlit")
 st.write("Ingresa un tema y te proponemos 10 problemas junto con instrucciones para desarrollar aplicaciones de Streamlit que los resuelvan.")
 
 # Campo de entrada para el tema
 tema = st.text_input("Ingrese un tema:", "")
 
-# Botón para generar los problemas y las aplicaciones
-if st.button("Generar Problemas y Aplicaciones") and tema:
-    with st.spinner("Generando problemas y aplicaciones..."):
+# Botón para generar los problemas y las instrucciones
+if st.button("Generar Problemas e Instrucciones") and tema:
+    with st.spinner("Generando problemas e instrucciones..."):
         try:
             # Obtener la clave de la API desde los Secrets
             api_key = st.secrets["together"]["api_key"]
@@ -92,61 +92,13 @@ if st.button("Generar Problemas y Aplicaciones") and tema:
                             st.markdown(f"### **{idx}. {descripcion}**")
                             st.markdown(f"**Instrucciones para la aplicación de Streamlit:**\n{instrucciones}")
 
-                            # Opcional: Generar el código de la aplicación utilizando las instrucciones
-                            # Puedes agregar aquí una llamada adicional a la API si deseas generar el código
-                            # Para simplificar, a continuación se muestra cómo podrías estructurarlo
-
-                            # Generar código de la aplicación
-                            # Nota: Esta sección es opcional y puede aumentar significativamente el tiempo de respuesta
-                            # y el uso de tokens de la API.
-
-                            # Prompt para generar el código de la aplicación
-                            prompt_codigo = (
-                                f"Basándote en las siguientes instrucciones, genera un código completo en Python para una aplicación de Streamlit que resuelva el problema.\n\n"
-                                f"Instrucciones: {instrucciones}\n\n"
-                                f"Proporciona el código completo sin explicaciones adicionales."
+                            # Opcional: Botón para copiar las instrucciones
+                            st.download_button(
+                                label=f"Copiar Instrucciones de la Aplicación {idx}",
+                                data=instrucciones,
+                                file_name=f"instrucciones_problema_{idx}.txt",
+                                mime="text/plain"
                             )
-
-                            mensaje_codigo = {
-                                "model": "mistralai/Mixtral-8x7B-Instruct-v0.1",
-                                "messages": [
-                                    {
-                                        "role": "user",
-                                        "content": prompt_codigo
-                                    }
-                                ],
-                                "max_tokens": 1500,  # Ajusta según sea necesario
-                                "temperature": 0.3,  # Más bajo para código más coherente
-                                "top_p": 0.9,
-                                "top_k": 50,
-                                "repetition_penalty": 1,
-                                "stop": ["<|eot_id|>"],
-                                "stream": False
-                            }
-
-                            # Solicitar el código a la API
-                            response_codigo = requests.post(url, headers=headers, data=json.dumps(mensaje_codigo))
-
-                            if response_codigo.status_code == 200:
-                                respuesta_codigo = response_codigo.json()
-                                codigo = respuesta_codigo.get("choices", [{}])[0].get("message", {}).get("content", "")
-                                
-                                if codigo:
-                                    with st.expander(f"Código para la Aplicación {idx}"):
-                                        st.code(codigo, language='python')
-
-                                    # Opcional: Botón para descargar el código
-                                    st.download_button(
-                                        label=f"Descargar Código de la Aplicación {idx}",
-                                        data=codigo,
-                                        file_name=f"app_problema_{idx}.py",
-                                        mime="text/plain"
-                                    )
-                                else:
-                                    st.warning(f"No se recibió código para la Aplicación {idx}.")
-                            else:
-                                st.error(f"Error al generar el código para la Aplicación {idx}: {response_codigo.status_code} - {response_codigo.text}")
-
                     else:
                         st.warning("La API no retornó suficientes problemas. Intenta con otro tema.")
                 else:
