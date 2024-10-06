@@ -5,21 +5,21 @@ import re
 
 # Configuración de la página
 st.set_page_config(
-    page_title="Generador de Problemas con Streamlit",
+    page_title="Generador de Problemas Detallados con Streamlit",
     page_icon="💡",
     layout="centered",
     initial_sidebar_state="auto",
 )
 
-st.title("Generador de 10 Problemas para Aplicaciones de Streamlit")
-st.write("Ingresa un tema y te proponemos 10 problemas que pueden ser resueltos mediante una aplicación de Streamlit.")
+st.title("Generador de 10 Problemas Detallados para Aplicaciones de Streamlit")
+st.write("Ingresa un tema y te proponemos 10 problemas detallados que pueden ser resueltos mediante una aplicación de Streamlit.")
 
 # Campo de entrada para el tema
 tema = st.text_input("Ingrese un tema:", "")
 
 # Botón para generar los problemas
 if st.button("Generar Problemas") and tema:
-    with st.spinner("Generando problemas..."):
+    with st.spinner("Generando problemas detallados..."):
         try:
             # Obtener la clave de la API desde los Secrets
             api_key = st.secrets["together"]["api_key"]
@@ -39,10 +39,13 @@ if st.button("Generar Problemas") and tema:
                 "messages": [
                     {
                         "role": "user",
-                        "content": f"Dado el tema '{tema}', propón 10 problemas que puedan ser resueltos mediante una aplicación de Streamlit."
+                        "content": (
+                            f"Dado el tema '{tema}', propón 10 problemas detallados que puedan ser resueltos mediante una aplicación de Streamlit. "
+                            "Para cada problema, proporciona un título y una descripción completa que incluya el objetivo principal, las funcionalidades clave y cualquier requisito adicional necesario."
+                        )
                     }
                 ],
-                "max_tokens": 2512,
+                "max_tokens": 3000,  # Aumentado para permitir descripciones más detalladas
                 "temperature": 0.7,
                 "top_p": 0.7,
                 "top_k": 50,
@@ -61,18 +64,21 @@ if st.button("Generar Problemas") and tema:
                 contenido = respuesta.get("choices", [{}])[0].get("message", {}).get("content", "")
                 
                 if contenido:
-                    # Procesar el contenido para extraer los 10 problemas
-                    # Suponiendo que los problemas están numerados del 1 al 10
-                    # Utilizamos expresiones regulares para encontrar los números y separar los problemas
-                    patrones = re.compile(r'^\s*\d+\.\s*(.+)', re.MULTILINE)
+                    # Procesar el contenido para extraer los 10 problemas detallados
+                    # Suponiendo que cada problema comienza con un número seguido de un título
+                    # Por ejemplo:
+                    # 1. Título del Problema
+                    #    Descripción detallada...
+                    patrones = re.compile(r'^\s*\d+\.\s*(.+?)\n\s{2,}(.+)', re.MULTILINE | re.DOTALL)
                     problemas = patrones.findall(contenido)
                     
                     if len(problemas) >= 10:
-                        st.success("Aquí tienes 10 problemas sugeridos:")
-                        for idx, problema in enumerate(problemas[:10], 1):
-                            st.write(f"**{idx}.** {problema.strip()}")
+                        st.success("Aquí tienes 10 problemas detallados sugeridos:")
+                        for idx, (titulo, descripcion) in enumerate(problemas[:10], 1):
+                            with st.expander(f"**{idx}. {titulo.strip()}**"):
+                                st.write(descripcion.strip())
                     else:
-                        st.warning("La API no retornó suficientes problemas. Intenta con otro tema.")
+                        st.warning("La API no retornó suficientes problemas detallados. Intenta con otro tema.")
                 else:
                     st.error("No se recibió contenido de la API.")
             else:
