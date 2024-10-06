@@ -5,7 +5,7 @@ import re
 
 # Configuración de la página
 st.set_page_config(
-    page_title="Generador de Problemas e Instrucciones para Streamlit",
+    page_title="Generador de Problemas e Instrucciones para Streamlit",  
     page_icon="💡",
     layout="centered",
     initial_sidebar_state="auto",
