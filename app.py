@@ -2,133 +2,79 @@ import streamlit as st
 import requests
 import json
 
-# Función para obtener la respuesta de la API de Together con streaming
-def get_api_response(messages, max_tokens=2512, temperature=0.7, top_p=0.7, top_k=50, repetition_penalty=1, stop=["<|eot_id|>"], stream=True):
-    headers = {
-        "Authorization": f"Bearer {st.secrets['TOGETHER_API_KEY']}",
-        "Content-Type": "application/json"
-    }
-
-    data = {
-        "model": "mistralai/Mixtral-8x7B-Instruct-v0.1",
-        "messages": messages,
-        "max_tokens": max_tokens,
-        "temperature": temperature,
-        "top_p": top_p,
-        "top_k": top_k,
-        "repetition_penalty": repetition_penalty,
-        "stop": stop,
-        "stream": stream
-    }
-
-    try:
-        response = requests.post("https://api.together.xyz/v1/chat/completions", headers=headers, data=json.dumps(data), stream=True)
-        response.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        st.error(f"Error en la solicitud a la API: {e}")
-        return ""
-
-    response_text = ""
-    for line in response.iter_lines():
-        if line:
-            decoded_line = line.decode('utf-8')
-            if decoded_line.startswith("data: "):
-                json_str = decoded_line.replace("data: ", "")
-                if json_str == "[DONE]":
-                    break
-                try:
-                    json_obj = json.loads(json_str)
-                    delta = json_obj.get("choices", [{}])[0].get("delta", {}).get("content", "")
-                    if delta:
-                        response_text += delta
-                        yield delta
-                except json.JSONDecodeError:
-                    continue
-
-# Función para generar 10 problemas basados en el tema
-def generar_problemas(tema):
-    prompt = f"Dado el tema '{tema}', propone 10 problemas que puedan ser resueltos mediante una aplicación de Streamlit."
-    messages = [{"role": "user", "content": prompt}]
-    problems = []
-    response_placeholder = st.empty()
-    accumulated_text = ""
-
-    with st.spinner("Generando problemas..."):
-        for chunk in get_api_response(messages):
-            accumulated_text += chunk
-            response_placeholder.markdown(accumulated_text)
-    
-    # Procesar el texto recibido para extraer los problemas
-    # Asumiendo que la API devuelve una lista numerada o con viñetas
-    lines = accumulated_text.split('\n')
-    for line in lines:
-        line = line.strip()
-        if not line:
-            continue
-        # Eliminar numeración o viñetas
-        if line[0].isdigit() and line[1] in {'.', ')'}:
-            problem = line[2:].strip()
-        elif line.startswith('- '):
-            problem = line[2:].strip()
-        else:
-            problem = line
-        if problem and problem not in problems:
-            problems.append(problem)
-        if len(problems) == 10:
-            break
-
-    if len(problems) < 10:
-        st.warning("No se pudieron generar 10 problemas. Intenta con otro tema.")
-    return problems
-
-# Función para generar el código de la aplicación basado en el problema seleccionado
-def generar_codigo(problema):
-    prompt = f"Genera el código para una aplicación de Streamlit que resuelva el siguiente problema: {problema}"
-    messages = [{"role": "user", "content": prompt}]
-    code = ""
-    code_placeholder = st.empty()
-
-    with st.spinner("Generando código de la aplicación..."):
-        for chunk in get_api_response(messages):
-            code += chunk
-            code_placeholder.code(code, language='python')
-    
-    return code
-
 # Configuración de la página
-st.set_page_config(page_title="Generador de Apps Streamlit", layout="wide")
+st.set_page_config(
+    page_title="Generador de Problemas con Streamlit",
+    page_icon="💡",
+    layout="centered",
+    initial_sidebar_state="auto",
+)
 
-st.title("Generador de Aplicaciones con Streamlit")
-st.write("Esta aplicación te ayudará a generar código para aplicaciones de Streamlit basadas en un tema que elijas.")
+st.title("Generador de 10 Problemas para Aplicaciones de Streamlit")
+st.write("Ingresa un tema y te proponemos 10 problemas que pueden ser resueltos mediante una aplicación de Streamlit.")
 
-# Inicializar el estado de la sesión
-if 'step' not in st.session_state:
-    st.session_state.step = 1
-if 'problems' not in st.session_state:
-    st.session_state.problems = []
-if 'codigo' not in st.session_state:
-    st.session_state.codigo = ""
+# Campo de entrada para el tema
+tema = st.text_input("Ingrese un tema:", "")
 
-# Paso 1: Ingresar el tema
-if st.session_state.step == 1:
-    st.header("Paso 1: Ingresa un Tema")
-    tema = st.text_input("Introduce el tema de tu interés:")
-    if st.button("Generar Problemas") and tema:
-        with st.spinner("Generando problemas..."):
-            st.session_state.problems = generar_problemas(tema)
-            if st.session_state.problems:
-                st.session_state.step = 2
+# Botón para generar los problemas
+if st.button("Generar Problemas") and tema:
+    with st.spinner("Generando problemas..."):
+        try:
+            # Obtener la clave de la API desde los Secrets
+            api_key = st.secrets["together"]["api_key"]
 
-# Paso 2: Seleccionar un problema y generar el código
-if st.session_state.step == 2 and st.session_state.problems:
-    st.header("Paso 2: Selecciona un Problema")
-    problema = st.selectbox("Elige uno de los siguientes problemas para resolver:", st.session_state.problems)
-    if st.button("Generar Código de la App"):
-        with st.spinner("Generando código de la aplicación..."):
-            st.session_state.codigo = generar_codigo(problema)
+            # Definir la URL de la API
+            url = "https://api.together.xyz/v1/chat/completions"
 
-# Mostrar el código generado
-if st.session_state.codigo:
-    st.header("Código Generado para la Aplicación de Streamlit")
-    st.code(st.session_state.codigo, language='python')
-    st.download_button("Descargar Código", st.session_state.codigo, file_name='app.py')
+            # Configurar los encabezados de la solicitud
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            }
+
+            # Crear el mensaje de entrada para la API
+            mensaje = {
+                "model": "mistralai/Mixtral-8x7B-Instruct-v0.1",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": f"Given the topic '{tema}', propose 10 problems that can be solved by a Streamlit app."
+                    }
+                ],
+                "max_tokens": 2512,
+                "temperature": 0.7,
+                "top_p": 0.7,
+                "top_k": 50,
+                "repetition_penalty": 1,
+                "stop": ["<|eot_id|>"],
+                "stream": False  # Cambiado a False para simplificar la recopilación de respuestas
+            }
+
+            # Realizar la solicitud POST a la API
+            response = requests.post(url, headers=headers, data=json.dumps(mensaje))
+
+            # Verificar si la solicitud fue exitosa
+            if response.status_code == 200:
+                respuesta = response.json()
+                # Extraer el contenido generado
+                contenido = respuesta.get("choices", [{}])[0].get("message", {}).get("content", "")
+                
+                if contenido:
+                    # Procesar el contenido para extraer los 10 problemas
+                    problemas = contenido.strip().split("\n")
+                    # Filtrar líneas que comienzan con un número o viñeta
+                    problemas_filtrados = [p for p in problemas if p.strip().startswith(("-", "1.", "2.", "3.", "4.", "5.", "6.", "7.", "8.", "9.", "10."))]
+                    
+                    if len(problemas_filtrados) >= 10:
+                        st.success("Aquí tienes 10 problemas sugeridos:")
+                        for idx, problema in enumerate(problemas_filtrados[:10], 1):
+                            st.write(f"**{idx}.** {problema.lstrip('-').strip()}")
+                    else:
+                        st.warning("La API no retornó suficientes problemas. Intenta con otro tema.")
+                else:
+                    st.error("No se recibió contenido de la API.")
+            else:
+                st.error(f"Error en la solicitud: {response.status_code} - {response.text}")
+        
+        except Exception as e:
+            st.error(f"Ocurrió un error: {e}")
