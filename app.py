@@ -45,7 +45,7 @@ if topic:
         problems = []
         for line in problems_text.splitlines():
             line = line.strip()
-            if line and (line[0].isdigit() or line[0] == '-'):
+            if line and (line[0].isdigit() or line[0] in ['-', '*']):
                 # Buscar el primer punto después del número
                 if '.' in line:
                     problem = line[line.find('.')+1:].strip()
@@ -55,15 +55,15 @@ if topic:
         if problems:
             selected_problem = st.selectbox("Elige un problema:", problems)
             if selected_problem:
-                st.write("Generando código de la app con CSS moderno...")
+                st.write("Generando la aplicación con CSS moderno...")
                 # Función para obtener el código JavaScript con CSS moderno
                 def get_js_code(problem):
-                    prompt = f"Genera el código de una página web en HTML, JavaScript y CSS moderno que resuelva el siguiente problema: '{problem}'. Utiliza CSS moderno (como Flexbox, Grid, animaciones, etc.) para lograr un diseño atractivo y responsive."
+                    prompt = f"Genera el código completo de una página web en HTML, JavaScript y CSS moderno que resuelva el siguiente problema: '{problem}'. Utiliza CSS moderno (como Flexbox, Grid, animaciones, etc.) para lograr un diseño atractivo y responsive. Incluye todo el código en una sola respuesta, sin omitir ninguna parte."
                     messages = [{"role": "user", "content": prompt}]
                     data = {
                         "model": "mistralai/Mixtral-8x7B-Instruct-v0.1",
                         "messages": messages,
-                        "max_tokens": 1500,
+                        "max_tokens": 2048,
                         "temperature": 0.7,
                         "top_p": 0.7,
                         "top_k": 50,
@@ -86,10 +86,7 @@ if topic:
 
                 js_code = get_js_code(selected_problem)
                 if js_code:
-                    st.subheader("Código de la app generada:")
-                    st.code(js_code, language='html')
-
-                    st.subheader("Vista previa de la app:")
+                    st.subheader("Aplicación generada:")
                     st.components.v1.html(js_code, height=600, scrolling=True)
         else:
             st.error("No se pudieron extraer los problemas.")
