@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 
-st.title("Generador de Apps JavaScript basado en un tema")
+st.title("Generador de Apps JavaScript con CSS Moderno basado en un tema")
 
 # Obtener la API Key de los Secrets de Streamlit
 api_key = st.secrets["together_api_key"]
@@ -45,21 +45,25 @@ if topic:
         problems = []
         for line in problems_text.splitlines():
             line = line.strip()
-            if line and line[0].isdigit():
-                problem = line[line.find('.')+1:].strip()
+            if line and (line[0].isdigit() or line[0] == '-'):
+                # Buscar el primer punto después del número
+                if '.' in line:
+                    problem = line[line.find('.')+1:].strip()
+                else:
+                    problem = line[1:].strip()
                 problems.append(problem)
         if problems:
             selected_problem = st.selectbox("Elige un problema:", problems)
             if selected_problem:
-                st.write("Generando código de la app...")
-                # Función para obtener el código JavaScript
+                st.write("Generando código de la app con CSS moderno...")
+                # Función para obtener el código JavaScript con CSS moderno
                 def get_js_code(problem):
-                    prompt = f"Genera el código de una página web en HTML y JavaScript que resuelva el siguiente problema: '{problem}'."
+                    prompt = f"Genera el código de una página web en HTML, JavaScript y CSS moderno que resuelva el siguiente problema: '{problem}'. Utiliza CSS moderno (como Flexbox, Grid, animaciones, etc.) para lograr un diseño atractivo y responsive."
                     messages = [{"role": "user", "content": prompt}]
                     data = {
                         "model": "mistralai/Mixtral-8x7B-Instruct-v0.1",
                         "messages": messages,
-                        "max_tokens": 1024,
+                        "max_tokens": 1500,
                         "temperature": 0.7,
                         "top_p": 0.7,
                         "top_k": 50,
